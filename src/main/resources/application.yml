@@ -1,0 +1,18 @@
+spring:
+  data:
+    mongodb:
+      # Use either MONGODB_URI (local MongoDB) or MONGODB_ATLAS_URI (MongoDB Atlas)
+      # Example local:
+      #   MONGODB_URI=mongodb://localhost:27017/jwt_security
+      # Example Atlas:
+      #   MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster-url>/jwt_security?retryWrites=true&w=majority
+      uri: ${MONGODB_ATLAS_URI:mongodb://localhost:27017/jwt_security}
+      database: jwtsecurity
+
+application:
+  security:
+    jwt:
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      expiration: 86400000 # a day
+      refresh-token:
+        expiration: 604800000 # 7 days
