@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -26,6 +27,9 @@ public class User implements UserDetails {
   private String email;
   private String password;
   private Role role;
+  private boolean enabled;
+  private String verificationToken;
+  private LocalDateTime verificationTokenExpiresAt;
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -59,6 +63,6 @@ public class User implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return true;
+    return enabled;
   }
 }

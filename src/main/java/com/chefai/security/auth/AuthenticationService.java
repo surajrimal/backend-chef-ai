@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class AuthenticationService {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
+  private final EmailService emailService;
 
   public AuthenticationResponse register(RegisterRequest request) {
     if (repository.existsByEmail(request.getEmail())) {
@@ -37,16 +40,27 @@ public class AuthenticationService {
         .lastname(request.getLastname())
         .email(request.getEmail())
         .password(passwordEncoder.encode(request.getPassword()))
-        .role(request.getRole())
+        .role(com.chefai.security.user.Role.USER)
+        .enabled(false)
+        .verificationToken(UUID.randomUUID().toString())
+        .verificationTokenExpiresAt(LocalDateTime.now().plusHours(24))
         .build();
     var savedUser = repository.save(user);
-    var jwtToken = jwtService.generateToken(user);
-    var refreshToken = jwtService.generateRefreshToken(user);
-    saveUserToken(savedUser, jwtToken);
-    return AuthenticationResponse.builder()
-        .accessToken(jwtToken)
-            .refreshToken(refreshToken)
-        .build();
+    emailService.sendVerificationEmail(savedUser);
+    return AuthenticationResponse.builder().build();
+  }
+
+  public void verifyEmail(String token) {
+    var user = repository.findByVerificationToken(token)
+        .orElseThrow(() -> new IllegalArgumentException("Invalid verification token"));
+    if (user.getVerificationTokenExpiresAt() == null
+        || user.getVerificationTokenExpiresAt().isBefore(LocalDateTime.now())) {
+      throw new IllegalArgumentException("Verification token has expired");
+    }
+    user.setEnabled(true);
+    user.setVerificationToken(null);
+    user.setVerificationTokenExpiresAt(null);
+    repository.save(user);
   }
 
   public AuthenticationResponse authenticate(AuthenticationRequest request) {
