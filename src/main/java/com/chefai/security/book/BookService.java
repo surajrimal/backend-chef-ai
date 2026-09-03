@@ -25,7 +25,7 @@ public class BookService {
 
         book.setAuthor(request.getAuthor());
         book.setIsbn(request.getIsbn());
-        book.setContent(request.getIsbn());
+        book.setContent(request.getContent());
         repository.save(book);
     }
 
