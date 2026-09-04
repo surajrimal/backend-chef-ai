@@ -64,4 +64,17 @@ class EmailServiceTest {
                 "Verify your account: http://localhost:3000/verify-email?token=token-123",
                 message.getText());
     }
+
+    @Test
+    void logsVerificationLinkInLocalModeWithoutSendingEmail() {
+        ReflectionTestUtils.setField(service, "enabled", true);
+        ReflectionTestUtils.setField(service, "mode", "log");
+
+        service.sendVerificationEmail(User.builder()
+                .email("user@example.com")
+                .verificationToken("token-123")
+                .build());
+
+        verify(mailSender, never()).send(org.mockito.ArgumentMatchers.any(SimpleMailMessage.class));
+    }
 }

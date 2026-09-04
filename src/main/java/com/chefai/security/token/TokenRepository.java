@@ -9,4 +9,6 @@ public interface TokenRepository extends MongoRepository<Token, String> {
   List<Token> findAllByUserIdAndExpiredIsFalseAndRevokedIsFalse(String userId);
 
   Optional<Token> findByToken(String token);
+
+  Optional<Token> findByTokenAndTokenType(String token, TokenType tokenType);
 }

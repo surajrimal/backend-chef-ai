@@ -1,8 +1,10 @@
 package com.chefai.security.config;
 
+import com.chefai.security.token.TokenType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
@@ -42,20 +44,22 @@ public class JwtService {
       Map<String, Object> extraClaims,
       UserDetails userDetails
   ) {
-    return buildToken(extraClaims, userDetails, jwtExpiration);
+    return buildToken(extraClaims, userDetails, jwtExpiration, TokenType.BEARER);
   }
 
   public String generateRefreshToken(
       UserDetails userDetails
   ) {
-    return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    return buildToken(new HashMap<>(), userDetails, refreshExpiration, TokenType.REFRESH);
   }
 
   private String buildToken(
           Map<String, Object> extraClaims,
           UserDetails userDetails,
-          long expiration
+          long expiration,
+          TokenType tokenType
   ) {
+    extraClaims.put("token_type", tokenType.name());
     return Jwts
             .builder()
             .setClaims(extraClaims)
@@ -67,8 +71,22 @@ public class JwtService {
   }
 
   public boolean isTokenValid(String token, UserDetails userDetails) {
-    final String username = extractUsername(token);
-    return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    try {
+      final String username = extractUsername(token);
+      return userDetails.getUsername().equals(username) && !isTokenExpired(token);
+    } catch (JwtException | IllegalArgumentException exception) {
+      return false;
+    }
+  }
+
+  public boolean isTokenValid(
+      String token,
+      UserDetails userDetails,
+      TokenType expectedTokenType
+  ) {
+    return isTokenValid(token, userDetails)
+        && expectedTokenType.name().equals(
+            extractClaim(token, claims -> claims.get("token_type", String.class)));
   }
 
   private boolean isTokenExpired(String token) {

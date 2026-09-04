@@ -76,6 +76,7 @@ public class AuthenticationService {
     var refreshToken = jwtService.generateRefreshToken(user);
     revokeAllUserTokens(user);
     saveUserToken(user, jwtToken);
+    saveRefreshToken(user, refreshToken);
     return AuthenticationResponse.builder()
         .accessToken(jwtToken)
             .refreshToken(refreshToken)
@@ -83,10 +84,18 @@ public class AuthenticationService {
   }
 
   private void saveUserToken(User user, String jwtToken) {
+    saveToken(user, jwtToken, TokenType.BEARER);
+  }
+
+  private void saveRefreshToken(User user, String refreshToken) {
+    saveToken(user, refreshToken, TokenType.REFRESH);
+  }
+
+  private void saveToken(User user, String tokenValue, TokenType tokenType) {
     var token = Token.builder()
         .userId(user.getId())
-        .token(jwtToken)
-        .tokenType(TokenType.BEARER)
+        .token(tokenValue)
+        .tokenType(tokenType)
         .expired(false)
         .revoked(false)
         .build();
@@ -110,25 +119,36 @@ public class AuthenticationService {
   ) throws IOException {
     final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
     final String refreshToken;
-    final String userEmail;
     if (authHeader == null ||!authHeader.startsWith("Bearer ")) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Refresh token is required");
       return;
     }
     refreshToken = authHeader.substring(7);
-    userEmail = jwtService.extractUsername(refreshToken);
-    if (userEmail != null) {
-      var user = this.repository.findByEmail(userEmail)
-              .orElseThrow();
-      if (jwtService.isTokenValid(refreshToken, user)) {
-        var accessToken = jwtService.generateToken(user);
-        revokeAllUserTokens(user);
-        saveUserToken(user, accessToken);
-        var authResponse = AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-        new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
-      }
+    var storedRefreshToken = tokenRepository
+        .findByTokenAndTokenType(refreshToken, TokenType.REFRESH)
+        .filter(token -> !token.isExpired() && !token.isRevoked())
+        .orElse(null);
+    if (storedRefreshToken == null) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid refresh token");
+      return;
     }
+
+    var user = repository.findById(storedRefreshToken.getUserId())
+        .orElse(null);
+    if (user == null || !jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH)) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid refresh token");
+      return;
+    }
+
+    var accessToken = jwtService.generateToken(user);
+    var rotatedRefreshToken = jwtService.generateRefreshToken(user);
+    revokeAllUserTokens(user);
+    saveUserToken(user, accessToken);
+    saveRefreshToken(user, rotatedRefreshToken);
+    var authResponse = AuthenticationResponse.builder()
+        .accessToken(accessToken)
+        .refreshToken(rotatedRefreshToken)
+        .build();
+    new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
   }
 }
