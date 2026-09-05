@@ -8,25 +8,13 @@ spring:
       #   MONGODB_ATLAS_URI=mongodb+srv://<username>:<password>@<cluster-url>/jwt_security?retryWrites=true&w=majority
       uri: ${MONGODB_ATLAS_URI:mongodb://localhost:27017/jwt_security}
       database: jwtsecurity
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: ${MAIL_SMTP_AUTH:true}
-          starttls:
-            enable: ${MAIL_SMTP_STARTTLS:true}
-
 application:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
   mail:
-    enabled: ${MAIL_ENABLED:true}
-    mode: ${MAIL_MODE:smtp}
-    from: ${MAIL_FROM:no-reply@example.com}
+    enabled: ${MAIL_ENABLED:false}
+    mode: ${MAIL_MODE:resend}
+    from: ${MAIL_FROM:onboarding@resend.dev}
     verification-url: ${MAIL_VERIFICATION_URL:http://localhost:3000/verify-email}
   security:
     jwt:
