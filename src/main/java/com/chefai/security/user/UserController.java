@@ -27,6 +27,15 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/profile")
+    public ResponseEntity<Void> updateProfile(
+            @RequestBody UpdateProfileRequest request,
+            @AuthenticationPrincipal User user
+    ) {
+        service.updateProfile(request, user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteAccount(
             @AuthenticationPrincipal User user

@@ -43,6 +43,36 @@ public class UserService {
         repository.save(user);
     }
 
+    public void updateProfile(UpdateProfileRequest request, String userId) {
+        if (request == null
+                || (isBlank(request.getFirstname()) && isBlank(request.getLastname()))) {
+            throw new IllegalArgumentException("At least one profile field is required");
+        }
+
+        var user = repository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User account not found"));
+
+        if (request.getFirstname() != null) {
+            user.setFirstname(requireValue(request.getFirstname(), "Firstname"));
+        }
+        if (request.getLastname() != null) {
+            user.setLastname(requireValue(request.getLastname(), "Lastname"));
+        }
+
+        repository.save(user);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String requireValue(String value, String fieldName) {
+        if (value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " cannot be blank");
+        }
+        return value.trim();
+    }
+
     public void deleteAccount(String userId) {
         var user = repository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("User account not found"));
