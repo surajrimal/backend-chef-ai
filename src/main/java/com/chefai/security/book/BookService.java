@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import org.springframework.data.domain.AuditorAware;
+import org.springframework.web.server.ResponseStatusException;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -31,5 +34,11 @@ public class BookService {
 
     public List<Book> findAll() {
         return repository.findAll();
+    }
+
+    public void delete(String id, String userId) {
+        if (repository.deleteByIdAndCreatedBy(id, userId) == 0) {
+            throw new ResponseStatusException(NOT_FOUND, "Book not found");
+        }
     }
 }

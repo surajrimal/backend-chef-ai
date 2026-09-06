@@ -56,7 +56,7 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final LogoutHandler logoutHandler;
-    @Value("${application.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    @Value("${application.cors.allowed-origins:http://localhost:3000,http://localhost:3001,http://localhost:5173}")
     private String allowedOrigins;
 
     @Bean
@@ -93,6 +93,9 @@ public class SecurityConfiguration {
         var configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
+                .map(origin -> origin.endsWith("/")
+                        ? origin.substring(0, origin.length() - 1)
+                        : origin)
                 .filter(origin -> !origin.isEmpty())
                 .toList());
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
