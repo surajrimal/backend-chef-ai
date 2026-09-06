@@ -19,6 +19,7 @@ import java.io.IOException;
 public class AuthenticationController {
 
   private final AuthenticationService service;
+  private final PasswordResetService passwordResetService;
 
   @PostMapping("/register")
   public ResponseEntity<AuthenticationResponse> register(
@@ -31,6 +32,22 @@ public class AuthenticationController {
       @RequestBody AuthenticationRequest request
   ) {
     return ResponseEntity.ok(service.authenticate(request));
+  }
+
+  @PostMapping("/forgot-password")
+  public ResponseEntity<Void> forgotPassword(
+      @RequestBody ForgotPasswordRequest request
+  ) {
+    passwordResetService.requestReset(request == null ? null : request.getEmail());
+    return ResponseEntity.accepted().build();
+  }
+
+  @PostMapping("/reset-password")
+  public ResponseEntity<Void> resetPassword(
+      @RequestBody ResetPasswordRequest request
+  ) {
+    passwordResetService.resetPassword(request);
+    return ResponseEntity.noContent().build();
   }
 
   @GetMapping("/verify-email")

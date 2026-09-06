@@ -16,6 +16,7 @@ application:
     mode: ${MAIL_MODE:resend}
     from: ${MAIL_FROM:onboarding@resend.dev}
     verification-url: ${MAIL_VERIFICATION_URL:http://localhost:3000/verify-email}
+    password-reset-url: ${MAIL_PASSWORD_RESET_URL:http://localhost:3000/reset-password}
   security:
     jwt:
       secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970

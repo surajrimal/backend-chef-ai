@@ -19,11 +19,13 @@ public class EmailService {
     private final String mode;
     private final String from;
     private final String verificationUrl;
+    private final String passwordResetUrl;
     private final String resendApiKey;
 
     public EmailService() {
         this(false, "resend", "onboarding@resend.dev",
-                "http://localhost:3000/verify-email", "");
+                "http://localhost:3000/verify-email",
+                "http://localhost:3000/reset-password", "");
     }
 
     @Autowired(required = false)
@@ -32,11 +34,13 @@ public class EmailService {
             @Value("${application.mail.mode:resend}") String mode,
             @Value("${application.mail.from:onboarding@resend.dev}") String from,
             @Value("${application.mail.verification-url:http://localhost:3000/verify-email}") String verificationUrl,
+            @Value("${application.mail.password-reset-url:http://localhost:3000/reset-password}") String passwordResetUrl,
             @Value("${RESEND_API_KEY:}") String resendApiKey) {
         this.enabled = enabled;
         this.mode = mode;
         this.from = from;
         this.verificationUrl = verificationUrl;
+        this.passwordResetUrl = passwordResetUrl;
         this.resendApiKey = resendApiKey;
     }
 
@@ -46,8 +50,32 @@ public class EmailService {
         }
 
         var verificationLink = verificationUrl + "?token=" + user.getVerificationToken();
+        sendEmail(user.getEmail(), "Verify your Chef AI account", verificationLink,
+                """
+                        <h2>Welcome to Chef AI!</h2>
+                        <p>Please click the link below to verify your email:</p>
+                        <a href="%s">Verify Email</a>
+                        """.formatted(verificationLink));
+    }
+
+    public void sendPasswordResetEmail(User user, String token) {
+        if (!enabled || user == null) {
+            return;
+        }
+
+        var resetLink = passwordResetUrl + "?token=" + token;
+        sendEmail(user.getEmail(), "Reset your Chef AI password", resetLink,
+                """
+                        <h2>Password reset requested</h2>
+                        <p>Click the link below to set a new password:</p>
+                        <a href="%s">Reset Password</a>
+                        <p>This link expires in 30 minutes.</p>
+                        """.formatted(resetLink));
+    }
+
+    private void sendEmail(String recipient, String subject, String link, String html) {
         if ("log".equalsIgnoreCase(mode)) {
-            log.info("Email verification link for {}: {}", user.getEmail(), verificationLink);
+            log.info("Email link for {}: {}", recipient, link);
             return;
         }
 
@@ -62,13 +90,9 @@ public class EmailService {
         var resend = new Resend(resendApiKey);
         var params = SendEmailRequest.builder()
                 .from(from)
-                .to(user.getEmail())
-                .subject("Verify your Chef AI account")
-                .html("""
-                        <h2>Welcome to Chef AI!</h2>
-                        <p>Please click the link below to verify your email:</p>
-                        <a href="%s">Verify Email</a>
-                        """.formatted(verificationLink))
+                .to(recipient)
+                .subject(subject)
+                .html(html)
                 .build();
         try {
             resend.emails().send(params);
