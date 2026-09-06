@@ -17,7 +17,9 @@ public class HistoryService {
     public void save(HistoryRequest request) {
         var history = History.builder()
                         .id(request.getId())
+                .ingredients(request.getIngredients())
                         .htmlPage(request.getHtml())
+
                         .build();
         repository.save(history);
     }

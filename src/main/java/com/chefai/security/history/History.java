@@ -8,6 +8,7 @@ import org.springframework.data.annotation.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -18,6 +19,7 @@ public class History {
 
     @Id
     private String id;
+    private List<String> ingredients;
     private String htmlPage;
 
 

@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface TokenRepository extends MongoRepository<Token, String> {
 
+  List<Token> findAllByUserId(String userId);
+
   List<Token> findAllByUserIdAndExpiredIsFalseAndRevokedIsFalse(String userId);
 
   Optional<Token> findByToken(String token);

@@ -1,5 +1,10 @@
 package com.chefai.security.user;
 
+import com.chefai.security.book.BookRepository;
+import com.chefai.security.history.HistoryRepository;
+import com.chefai.security.token.TokenRepository;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +18,11 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository repository;
+    private final BookRepository bookRepository;
+    private final HistoryRepository historyRepository;
+    private final TokenRepository tokenRepository;
+    private final ArchivedAccountRepository archivedAccountRepository;
+
     public void changePassword(ChangePasswordRequest request, Principal connectedUser) {
 
         var user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
@@ -31,5 +41,28 @@ public class UserService {
 
         // save the new password
         repository.save(user);
+    }
+
+    public void deleteAccount(String userId) {
+        var user = repository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User account not found"));
+        var books = bookRepository.findAllByCreatedBy(userId);
+        var histories = historyRepository.findAllByLastModifiedBy(userId);
+        var tokens = tokenRepository.findAllByUserId(userId);
+
+        archivedAccountRepository.save(ArchivedAccount.builder()
+                .id(UUID.randomUUID().toString())
+                .userId(userId)
+                .archivedAt(LocalDateTime.now())
+                .user(user)
+                .books(books)
+                .histories(histories)
+                .tokens(tokens)
+                .build());
+
+        tokenRepository.deleteAll(tokens);
+        bookRepository.deleteAll(books);
+        historyRepository.deleteAll(histories);
+        repository.delete(user);
     }
 }
