@@ -1,6 +1,7 @@
 package com.chefai.security.config;
 
 import com.chefai.security.token.TokenType;
+import com.chefai.security.user.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -44,6 +45,10 @@ public class JwtService {
       Map<String, Object> extraClaims,
       UserDetails userDetails
   ) {
+    if (userDetails instanceof User user) {
+      extraClaims.put("firstname", user.getFirstname());
+      extraClaims.put("lastname", user.getLastname());
+    }
     return buildToken(extraClaims, userDetails, jwtExpiration, TokenType.BEARER);
   }
 
